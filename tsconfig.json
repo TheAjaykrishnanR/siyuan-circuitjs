@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "esnext",
+    "lib": [
+      "esnext",
+      "dom"
+    ],
+    "strict": true,
+    "esModuleInterop": true,
+    "declaration": false,
+    "skipLibCheck": true,
+    "moduleResolution": "node",
+    "baseUrl": ".",
+    "paths": {
+      "siyuan": [
+        "./siyuan-plugin-api-reference/siyuan.d.ts"
+      ],
+      "siyuan/*": [
+        "./siyuan-plugin-api-reference/types/*"
+      ]
+    }
+  },
+  "include": [
+    "src/**/*.ts"
+  ]
+}

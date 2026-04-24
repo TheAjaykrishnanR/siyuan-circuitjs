@@ -1,0 +1,30 @@
+{
+  "name": "siyuan-circuitjs",
+  "author": "Jayakuttan",
+  "version": "0.1.0",
+  "displayName": {
+    "default": "Circuit Simulator",
+    "zh_CN": "电路模拟器"
+  },
+  "description": {
+    "default": "Circuit simulation plugin using CircuitJS1",
+    "zh_CN": "使用 CircuitJS1 的电路模拟插件"
+  },
+  "icon": "icon.png",
+  "minAppVersion": "2.10.0",
+  "backends": [
+    "windows",
+    "linux",
+    "darwin",
+    "docker",
+    "all"
+  ],
+  "frontends": [
+    "desktop",
+    "browser-desktop",
+    "all"
+  ],
+  "readme": {
+    "default": "README.md"
+  }
+}
