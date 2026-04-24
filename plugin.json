@@ -1,6 +1,7 @@
 {
   "name": "siyuan-circuitjs",
-  "author": "Jayakuttan",
+  "author": "Ajaykrishnan R",
+  "url": "https://github.com/TheAjaykrishnanR/siyuan-circuitjs",
   "version": "0.1.0",
   "displayName": {
     "default": "Circuit Simulator",
