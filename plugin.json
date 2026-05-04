@@ -14,17 +14,12 @@
   "icon": "icon.png",
   "minAppVersion": "2.10.0",
   "backends": [
-    "windows",
-    "linux",
-    "darwin",
-    "docker",
     "all"
   ],
   "frontends": [
-    "desktop",
-    "browser-desktop",
     "all"
   ],
+  "disabledInPublish": true,
   "readme": {
     "default": "README.md"
   }

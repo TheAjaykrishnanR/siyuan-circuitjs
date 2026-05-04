@@ -2,7 +2,7 @@
   "name": "siyuan-circuitjs",
   "version": "0.1.0",
   "description": "Circuit simulation plugin for SiYuan using CircuitJS1",
-  "main": "dist/index.js",
+  "main": "index.js",
   "scripts": {
     "dev": "webpack --mode development",
     "build": "webpack --mode production"

@@ -14,8 +14,6 @@ export default class CircuitPlugin extends Plugin {
     private boundHandleMessage: (event: MessageEvent) => void;
 
     onload() {
-        console.log("CircuitJS Simulator Plugin loaded");
-
         this.protyleSlash = [{
             filter: ["circuit", "电路", "dl"],
             html: `<div class="b3-list-item__first"><span class="b3-list-item__text">${this.i18n.insertCircuit}</span><span class="b3-list-item__meta">CircuitJS</span></div>`,
@@ -93,8 +91,6 @@ export default class CircuitPlugin extends Plugin {
         // If it's already wrapped, don't do it again
         if (iframe.parentElement?.classList.contains('circuit-iframe-wrapper')) return;
 
-        console.log("CircuitJS: Injecting UI wrapper for block", blockId);
-        
         // Create the structure
         const container = document.createElement('div');
         container.className = 'circuit-container';
@@ -222,7 +218,6 @@ export default class CircuitPlugin extends Plugin {
             win.circuitjs_menuPerformed = function(menu: string, item: string) {
                 // If item is too short, pad it for the check, or just bypass the buggy check
                 if (item && item.length < 10) {
-                    console.log("CircuitJS Patch: Bypassing buggy substring check for", item);
                     // The buggy check in CirSim.java is: if (item.substring(0,10)=="addToScope" ...)
                     // Since our item is < 10, it definitely isn't "addToScope".
                     // We can't easily fix the GWT-compiled code, but we can wrap the call.
@@ -238,7 +233,6 @@ export default class CircuitPlugin extends Plugin {
             };
         }
 
-        console.log("CircuitJS: Binding block", blockId);
         this.loadCircuitFromAttr(blockId, iframe);
     }
 
@@ -258,19 +252,17 @@ export default class CircuitPlugin extends Plugin {
                 fetchPost("/api/attr/getBlockAttrs", { id }, (res) => {
                     const encodedData = res?.data?.["custom-circuit"];
                     if (encodedData) {
-                        // If it has saved data, but it's currently loading the example circuit (no cct=%24),
+                        // If it has saved data, but it's currently loading the example circuit (no cct=),
                         // we must redirect it to start blank so the async loader is disabled,
                         // otherwise the async loader will overwrite our restored data.
-                        if (!iframe.src.includes('cct=%24')) {
-                            console.log("CircuitJS: Reloading iframe with cct=%24 to prevent async overwrite");
-                            // Append cct=%24 and wait for the NEXT circuitjs-ready event.
-                            iframe.src = iframe.src + '&cct=%24';
+                        if (!iframe.src.includes('cct=')) {
+                            // Append cct=%20 and wait for the NEXT circuitjs-ready event.
+                            iframe.src = iframe.src + '&cct=%20';
                             return; // Stop here. The iframe will reload and fire circuitjs-ready again.
                         }
 
                         try {
                             const data = decodeURIComponent(encodedData);
-                            console.log("CircuitJS: Restoring state for", id);
                             win.circuitjs_readCircuit(data);
                             this.lastSavedState.set(id, data);
                         } catch (e) {
@@ -355,7 +347,6 @@ export default class CircuitPlugin extends Plugin {
     }
 
     private persistState(id: string, data: string, iframe: HTMLIFrameElement) {
-        console.log("CircuitJS: Persisting state for", id);
         this.lastSavedState.set(id, data);
         const encoded = encodeURIComponent(data);
 
@@ -415,7 +406,6 @@ export default class CircuitPlugin extends Plugin {
             case "run-pause": 
                 if (win.circuitjs_setSimRunning && win.circuitjs_simIsRunning) {
                     const isRunning = win.circuitjs_simIsRunning();
-                    console.log("CircuitJS: Toggling play/pause. Currently running:", isRunning);
                     win.circuitjs_setSimRunning(!isRunning);
                     actionEl.textContent = !isRunning ? "Pause" : "Play";
                 } else {
@@ -516,13 +506,10 @@ export default class CircuitPlugin extends Plugin {
         // Force save any pending dirty states immediately
         for (const [id, timeout] of this.saveTimeouts.entries()) {
             clearTimeout(timeout);
-            console.log("CircuitJS: Force saving pending state on unload for", id);
             this.saveToSiYuan(id);
         }
         this.saveTimeouts.clear();
         this.isDirty.clear();
-
-        console.log("CircuitJS Simulator Plugin unloaded");
     }
 
     private handleMessage(event: MessageEvent) {
@@ -536,7 +523,6 @@ export default class CircuitPlugin extends Plugin {
                     if (blockElement) {
                         const blockId = blockElement.getAttribute('data-node-id');
                         if (blockId) {
-                            console.log("CircuitJS: Block ready via message", blockId);
                             this.ensureUIWrapper(iframe as HTMLIFrameElement, blockId);
                             this.bindIframe(iframe as HTMLIFrameElement, blockId);
                         }
