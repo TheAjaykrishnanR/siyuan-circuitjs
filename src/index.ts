@@ -12,6 +12,10 @@ export default class CircuitPlugin extends Plugin {
     private saveTimeouts = new Map<string, any>();
     private isDirty = new Map<string, boolean>();
     private boundHandleMessage: (event: MessageEvent) => void;
+    private boundKeydownHandler: (event: KeyboardEvent) => void;
+    private boundRebindAll: () => void;
+    private initialRebindTimeout: any;
+    private rebindAllTimeout: any;
 
     onload() {
         this.protyleSlash = [{
@@ -23,9 +27,7 @@ export default class CircuitPlugin extends Plugin {
             }
         }];
 
-        // Intercept Escape key globally in capture phase to prevent SiYuan from exiting 
-        // edit mode when focus is inside our UI, and route it to CircuitJS "Select" mode.
-        window.addEventListener("keydown", (event: KeyboardEvent) => {
+        this.boundKeydownHandler = (event: KeyboardEvent) => {
             if (event.key === "Escape") {
                 const target = event.target as HTMLElement;
                 const container = target.closest(".circuit-container");
@@ -41,21 +43,30 @@ export default class CircuitPlugin extends Plugin {
                     }
                 }
             }
-        }, true);
+        };
+
+        // Intercept Escape key globally in capture phase to prevent SiYuan from exiting 
+        // edit mode when focus is inside our UI, and route it to CircuitJS "Select" mode.
+        window.addEventListener("keydown", this.boundKeydownHandler, true);
 
         this.boundHandleMessage = this.handleMessage.bind(this);
         window.addEventListener('message', this.boundHandleMessage);
 
+        this.boundRebindAll = this.rebindAll.bind(this);
+
         // Use standard SiYuan events for re-hydration
-        this.eventBus.on("loaded-protyle-static", () => this.rebindAll());
-        this.eventBus.on("loaded-protyle-dynamic", () => this.rebindAll());
+        this.eventBus.on("loaded-protyle-static", this.boundRebindAll);
+        this.eventBus.on("loaded-protyle-dynamic", this.boundRebindAll);
         
         // Also use MutationObserver for immediate feedback when inserting or switching
-        this.observer = new MutationObserver(() => this.rebindAll());
+        this.observer = new MutationObserver(this.boundRebindAll);
         this.observer.observe(document.body, { childList: true, subtree: true });
 
         // Initial run
-        setTimeout(() => this.rebindAll(), 1000);
+        this.initialRebindTimeout = setTimeout(() => {
+            this.initialRebindTimeout = undefined;
+            this.rebindAll();
+        }, 1000);
     }
 
     private insertCircuit(protyle: Protyle) {
@@ -66,10 +77,10 @@ export default class CircuitPlugin extends Plugin {
         protyle.insert(html, true);
     }
 
-    private rebindAllTimeout: any;
     private rebindAll() {
         if (this.rebindAllTimeout) clearTimeout(this.rebindAllTimeout);
         this.rebindAllTimeout = setTimeout(() => {
+            this.rebindAllTimeout = undefined;
             const iframes = document.querySelectorAll('iframe');
             iframes.forEach((iframe: HTMLIFrameElement) => {
                 // Check if this is one of our circuit iframes by src
@@ -496,17 +507,23 @@ export default class CircuitPlugin extends Plugin {
     }
 
     onunload() {
-        this.observer?.disconnect();
+        if (this.observer) this.observer.disconnect();
         window.removeEventListener('message', this.boundHandleMessage);
+        window.removeEventListener('keydown', this.boundKeydownHandler, true);
+        
+        this.eventBus.off("loaded-protyle-static", this.boundRebindAll);
+        this.eventBus.off("loaded-protyle-dynamic", this.boundRebindAll);
+
+        if (this.initialRebindTimeout) clearTimeout(this.initialRebindTimeout);
+        if (this.rebindAllTimeout) clearTimeout(this.rebindAllTimeout);
+
         for (const interval of this.pollingIntervals.values()) {
             clearInterval(interval);
         }
         this.pollingIntervals.clear();
         
-        // Force save any pending dirty states immediately
-        for (const [id, timeout] of this.saveTimeouts.entries()) {
+        for (const timeout of this.saveTimeouts.values()) {
             clearTimeout(timeout);
-            this.saveToSiYuan(id);
         }
         this.saveTimeouts.clear();
         this.isDirty.clear();
