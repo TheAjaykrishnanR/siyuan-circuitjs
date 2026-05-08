@@ -88,6 +88,7 @@ export default class CircuitPlugin extends Plugin {
                     const blockElement = this.findBlockElement(iframe);
                     if (blockElement) {
                         const blockId = blockElement.getAttribute('data-node-id');
+                        // Use a flag that we clear when the iframe reloads to ensure we re-bind on reload
                         if (blockId && !iframe.getAttribute('data-bound')) {
                             this.ensureUIWrapper(iframe, blockId);
                             this.bindIframe(iframe, blockId);
@@ -267,9 +268,10 @@ export default class CircuitPlugin extends Plugin {
                         // we must redirect it to start blank so the async loader is disabled,
                         // otherwise the async loader will overwrite our restored data.
                         if (!iframe.src.includes('cct=')) {
-                            // Append cct=%20 and wait for the NEXT circuitjs-ready event.
+                            // Clear data-bound so that the reload triggers re-binding
+                            iframe.removeAttribute('data-bound');
                             iframe.src = iframe.src + '&cct=%20';
-                            return; // Stop here. The iframe will reload and fire circuitjs-ready again.
+                            return; 
                         }
 
                         try {
@@ -475,13 +477,10 @@ export default class CircuitPlugin extends Plugin {
         } else if (action === "add-component") {
             let comp = (actionEl as HTMLSelectElement).value;
             if (comp) {
-                // We use setMenuSelection instead of menuPerformed to ensure correct internal state,
-                // and we no longer need the 'add-' padding hack because the compiled GWT bounds check bug
-                // has been directly patched in the .cache.js files.
-                if (win.circuitjs_setMenuSelection) {
-                    win.circuitjs_setMenuSelection(comp);
-                } else {
-                    win.circuitjs_menuPerformed?.("main", comp);
+                // ALWAYS use menuPerformed for component selection because our Java patch
+                // in CirSim.java now handles short strings safely.
+                if (win.circuitjs_menuPerformed) {
+                    win.circuitjs_menuPerformed("main", comp);
                 }
                 // Reset selection to "Add Component..."
                 (actionEl as HTMLSelectElement).value = "";
@@ -540,6 +539,9 @@ export default class CircuitPlugin extends Plugin {
                     if (blockElement) {
                         const blockId = blockElement.getAttribute('data-node-id');
                         if (blockId) {
+                            // Clear data-bound on ready message so we re-process this iframe
+                            // This handles the case where the iframe reloaded due to cct= appending
+                            iframe.removeAttribute('data-bound');
                             this.ensureUIWrapper(iframe as HTMLIFrameElement, blockId);
                             this.bindIframe(iframe as HTMLIFrameElement, blockId);
                         }
