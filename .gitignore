@@ -6,7 +6,6 @@ dist
 package.zip
 index.css
 index.js
-/i18n
-/circuitjs1
+i18n
 siyuan-plugin-api-reference
 plugin-sample

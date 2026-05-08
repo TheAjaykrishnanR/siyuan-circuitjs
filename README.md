@@ -5,7 +5,7 @@ Circuit simulation plugin for SiYuan using CircuitJS1.
 ## Features
 
 - Insert interactive circuit simulations into your SiYuan notes.
-- Based on the powerful [CircuitJS1](https://github.com/pfalstad/circuitjs1) engine.
+- Based on the powerful [CircuitJS1](https://github.com/sharpie7/circuitjs1)
 
 ## Usage
 
